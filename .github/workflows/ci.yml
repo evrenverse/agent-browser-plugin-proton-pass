@@ -13,7 +13,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # No windows-latest, and the reason is a deliberate decision elsewhere in
+        # this package: pass-cli is spawned without `shell: true`, because a shell
+        # between this code and a password manager is an injection surface. Node
+        # has refused to spawn a `.cmd` without a shell since the CVE-2024-27980
+        # fix, and the test harness's fake pass-cli can only be a `.cmd` on
+        # Windows — so the suite cannot run there without weakening the thing it
+        # exists to protect. The plugin itself has never been measured on Windows;
+        # README's "Platform notes" says so rather than implying support.
+        os: [ubuntu-latest, macos-latest]
         node: [22, 24]
     runs-on: ${{ matrix.os }}
     steps:

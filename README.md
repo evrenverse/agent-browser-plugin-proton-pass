@@ -375,6 +375,8 @@ The residual risk, plainly: `bash` expands `$PW` before `exec`, so the value **i
 
 `pass-cli` talks to Proton's servers directly and needs no local daemon, which is why there is no cross-boundary problem here.
 
+**Windows is untested, and CI does not claim otherwise.** The suite runs on Linux and macOS only. The reason is a decision made elsewhere in this package: `pass-cli` is spawned without `shell: true`, because putting a shell between this code and a password manager is an injection surface. Node has refused to spawn a `.cmd` without a shell since its CVE-2024-27980 fix, and on Windows the test harness's fake `pass-cli` can only be a `.cmd` — so the suite cannot run there without weakening the property it exists to protect. Nothing here is known to break on Windows; it has simply never been measured, and a green badge for a platform nobody has run would be worse than this paragraph.
+
 | Environment | Behaviour |
 | --- | --- |
 | Linux, macOS | Keyring present, unremarkable — as long as the agent runs in the login session that logged in. When it does not, see below |

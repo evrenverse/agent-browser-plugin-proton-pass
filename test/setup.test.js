@@ -45,6 +45,12 @@ function harness({ modes = HAPPY, answers = ANSWERS, home = mkdtempSync(join(tmp
     bin: FAKE,
     env: fakeSequenceEnv(modes),
     home,
+    // Pinned, not inherited: the key-provider hazard check reads the ambient
+    // environment, so a developer box exporting PROTON_PASS_KEY_PROVIDER=fs sees
+    // setup ask its questions while CI, which exports nothing, sees it stop at the
+    // hazard before the first one. That difference cost a red first CI run on
+    // 2026-08-28 — every test here states the environment it means.
+    processEnv: { PROTON_PASS_KEY_PROVIDER: 'fs' },
     ask: async (/** @type {string} */ question) => {
       asked.push(question);
       return queue.shift() ?? '';
