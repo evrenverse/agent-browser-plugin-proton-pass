@@ -1,0 +1,23 @@
+{
+  "name": "agent-browser-plugin-proton-pass",
+  "version": "0.1.0",
+  "description": "Proton Pass credential provider for agent-browser — resolve logins without exposing secrets to the agent",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/evrenverse/agent-browser-plugin-proton-pass.git"
+  },
+  "homepage": "https://github.com/evrenverse/agent-browser-plugin-proton-pass#readme",
+  "bugs": "https://github.com/evrenverse/agent-browser-plugin-proton-pass/issues",
+  "bin": { "agent-browser-plugin-proton-pass": "src/index.js" },
+  "files": ["src", "skill", "README.md", "SECURITY.md", "CHANGELOG.md", "LICENSE"],
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "typecheck": "tsc --checkJs --noEmit --target es2022 --module nodenext --moduleResolution nodenext src/*.js"
+  },
+  "devDependencies": { "@types/node": "^22", "typescript": "^5.7.0" },
+  "keywords": ["agent-browser", "proton-pass", "credential-provider", "plugin", "ai-agent"]
+}

@@ -1,0 +1,13 @@
+node_modules/
+*.log
+.DS_Store
+test/fixtures/*.cmd
+# Machine-local agent-browser config: Task 11 writes one into the checkout to
+# register the plugin from here. It names absolute paths and never belongs in git.
+agent-browser.json
+
+# Internal working documents: the agent instruction file and the superpowers
+# spec/plan. They stay on disk and out of the repository — the reasoning they
+# hold is restated in README.md and CHANGELOG.md, which are what a reader gets.
+CLAUDE.md
+docs/
