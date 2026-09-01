@@ -109,7 +109,7 @@ to add that URL to the item in Proton Pass. Do not work around it by dropping
      `--force` does not ask.
 
    The token's lifetime is whatever `--expiration` was set to when it was
-   created (`1h, 1d, 1w, 1m, 3m, 6m, 1y`; `setup` offers `1w` as its default).
+   created (`1h, 1d, 1w, 1m, 3m, 6m, 1y`; `setup` offers `1m` as its default).
    Once it expires, ask the human to renew it. **Do not guess the agent's
    name.** While the session is still valid, `doctor`'s `session kind` detail
    spells the whole `pass-cli agent renew` command out with the name already in

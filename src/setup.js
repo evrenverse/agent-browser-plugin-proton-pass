@@ -22,7 +22,18 @@ import { runDoctor, formatReport } from './doctor.js';
 
 /** What `--expiration` accepts, in the order pass-cli documents them. */
 const EXPIRATIONS = ['1h', '1d', '1w', '1m', '3m', '6m', '1y'];
-const DEFAULT_EXPIRATION = '1w';
+/**
+ * What the lifetime question takes when it is answered with nothing.
+ *
+ * A month rather than a week because both ends of that trade-off moved when
+ * setup started ending the human session: every renewal now costs a `pass-cli
+ * login` with password and 2FA, which is a person at a terminal rather than a
+ * command in a script. A week of that is a chore people work around — by
+ * keeping a session open, which is the thing the logout exists to prevent. The
+ * list above is still there for anyone who wants shorter, and `doctor` still
+ * prints `1h` in the command it offers to copy.
+ */
+const DEFAULT_EXPIRATION = '1m';
 const DEFAULT_NAME = 'browser-agent';
 
 /**

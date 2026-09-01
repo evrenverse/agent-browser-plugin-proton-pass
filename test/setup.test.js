@@ -182,6 +182,15 @@ test('a lifetime pass-cli does not accept asks again', async () => {
   assert.ok(argv.includes('--expiration=1d'), `expected --expiration=1d, got ${JSON.stringify(argv)}`);
 });
 
+test('an empty answer to the lifetime question takes the default', async () => {
+  // The default is the answer most runs will give, so it is the one worth
+  // pinning: nothing else in the suite would notice it changing.
+  const run = harness({ answers: ['1 3', 'y', '', ''] });
+  await runSetup(run.options);
+  const argv = created(run.calls()).argv;
+  assert.ok(argv.includes('--expiration=1m'), `expected --expiration=1m, got ${JSON.stringify(argv)}`);
+});
+
 test('the token never enters argv, and reaches pass-cli login in the environment', async () => {
   const run = harness();
   await runSetup(run.options);
