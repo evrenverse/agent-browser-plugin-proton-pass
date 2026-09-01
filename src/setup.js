@@ -293,6 +293,29 @@ export async function runSetup(options = {}) {
     }
     out(`\nWrote ${envFile} — mode 0600, and the only place the token is stored.\n`);
 
+    // The human's session had two jobs — listing the vaults and minting the
+    // token — and both are done. Ending it here is what makes the token the
+    // agent's only reach into Pass: a session left signed in sits ungated beside
+    // the scoped one, sees every vault, files no audit reason, and is the
+    // convenient way around every limit the token exists to impose. It costs one
+    // `pass-cli login` before the next setup, and that is the whole of it.
+    //
+    // Not `--force`, which leaves a session Proton never heard about live on the
+    // account: gone is the point. A failure is reported and nothing more — the
+    // token is minted and written, and every step below runs as the agent. The
+    // call cannot escalate into one against the wrong directory either: recovery
+    // needs a token and a session directory in the child environment, and
+    // HUMAN_SESSION clears both.
+    try {
+      await runPassCli(['logout'], human);
+      out('Signed your own session out — it is needed only to list the vaults and mint the token.\n');
+    } catch (error) {
+      out(
+        `Could not sign your own session out: ${error.message}\n` +
+          'It stays signed in and sees every vault. Run pass-cli logout yourself once this finishes.\n'
+      );
+    }
+
     const agent = {
       bin: options.bin,
       env: {

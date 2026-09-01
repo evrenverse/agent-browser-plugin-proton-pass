@@ -32,8 +32,9 @@ pass-cli login
 #    can see, asks which of them the agent may read — numbered, nothing
 #    preselected, and an empty answer creates no token — repeats the choice back
 #    with what it means, creates the scoped token, writes
-#    ~/.proton-pass-agent/env (mode 0600, in a 0700 directory), logs the agent in
-#    there, and ends with the `doctor` report. The token is never printed and
+#    ~/.proton-pass-agent/env (mode 0600, in a 0700 directory), signs your own
+#    session out — it is needed only for the two steps above — logs the agent
+#    in there, and ends with the `doctor` report. The token is never printed and
 #    never reaches `argv`. Run it again whenever you need to — it clears the
 #    agent session left by the previous run first, in that directory and no
 #    other. From a checkout this is `node src/index.js setup`.
@@ -151,7 +152,7 @@ The same applies to every command spelled `agent-browser-plugin-proton-pass …`
 
 ### Doing it by hand
 
-`setup` automates the sequence below, plus a `pass-cli --version` check and — on a re-run — the `logout --force` that step 4 explains. It is worth running by hand when the answer to "which vaults" needs looking into, reading what is in them first or creating one for the purpose, and it is the only path without a terminal.
+`setup` automates the sequence below, plus a `pass-cli --version` check and — on a re-run — the `logout --force` that step 5 explains. It is worth running by hand when the answer to "which vaults" needs looking into, reading what is in them first or creating one for the purpose, and it is the only path without a terminal.
 
 ```bash
 # 1. Find out what your vaults are actually called. --vault takes an existing
@@ -170,17 +171,26 @@ pass-cli vault list
 #    instructions follow it as prose.
 pass-cli agent create browser-agent --expiration 1d --vault Automation
 
-# 3. The token goes into the environment the agent-browser daemon inherits,
+# 3. End your own session. It was needed for the two steps above and for
+#    nothing after them, and left signed in it sits beside the scoped one: it
+#    sees every vault, files no audit reason, and permits `--show-secrets`. So
+#    it is the convenient way around every limit the token exists to impose,
+#    and the next `setup` costs one `pass-cli login` — which is the whole of
+#    the price. Plain, not `--force`: a session Proton never heard about stays
+#    live on the account.
+pass-cli logout
+
+# 4. The token goes into the environment the agent-browser daemon inherits,
 #    together with pass-cli state of the agent's own: a session directory it
 #    does not share, and a key that does not live in a login session's keyring.
 #    See "Platform notes" — without this an agent under a daemon cannot decrypt
 #    the local database at all. From here on this shell is the agent's, not
-#    yours: it no longer sees the session your own `pass-cli login` created.
+#    yours — and after step 3 there is no session of yours left for it to see.
 export PROTON_PASS_SESSION_DIR="$HOME/.proton-pass-agent"
 export PROTON_PASS_KEY_PROVIDER=fs
 export PROTON_PASS_PERSONAL_ACCESS_TOKEN='<the token it printed>'
 
-# 4. Log the agent in, in that same shell. Exporting the token is NOT enough: on
+# 5. Log the agent in, in that same shell. Exporting the token is NOT enough: on
 #    its own every command still answers `Error: This operation requires an
 #    authenticated client`. This writes the agent's session into the directory
 #    above, next to no one else's.
@@ -194,7 +204,7 @@ pass-cli logout --force   # on a re-run only, and only with the export above set
 pass-cli login
 ```
 
-Step 4 is not this project's invention: `pass-cli agent create` prints Proton's own agent instructions next to the token, and they prescribe the same two steps — a session directory of the agent's own, then `pass-cli login` with the token in the environment. The isolated `PROTON_PASS_SESSION_DIR` this project arrived at by measurement (see [Platform notes](#platform-notes)) is what Proton recommends independently.
+Step 5 is not this project's invention: `pass-cli agent create` prints Proton's own agent instructions next to the token, and they prescribe the same two steps — a session directory of the agent's own, then `pass-cli login` with the token in the environment. The isolated `PROTON_PASS_SESSION_DIR` this project arrived at by measurement (see [Platform notes](#platform-notes)) is what Proton recommends independently.
 
 If you are creating a throwaway login item for a first test: a Proton **organisation policy can reject `--generate-password`** outright — one seen in practice is `Your organization requires random passwords to be at least 32 characters long`. Raise the length rather than fighting it. The flag is `--generate-password[=<SETTINGS>]` and its settings string is `length,uppercase,symbols`, where the last two are literal words and not booleans: `--generate-password=40,uppercase,symbols`, not `=40,true,true`.
 
