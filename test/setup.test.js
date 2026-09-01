@@ -13,14 +13,15 @@ const TOKEN = 'pst_test::key';
 
 /**
  * What setup calls, in order: its own preflight `--version`, the human's
- * `vault list`, `agent create`, the probe for a session already in the agent's
- * directory — `no-session` here, so there is none — the agent's `login`, then
+ * `vault list`, `agent create`, the human's `logout`, then the probe for a session already
+ * in the agent's directory — `no-session` here, so there is none — the agent's `login`, then
  * doctor's three.
  */
 const HAPPY = [
   'version',
   'vaults-many',
   'agent-create',
+  'logout',
   'no-session',
   'login',
   'version',
@@ -198,7 +199,7 @@ test('the token never enters argv, and reaches pass-cli login in the environment
   assert.equal(run.output().includes(TOKEN), false, 'the token is never printed');
 });
 
-test("the vault list and the token are read in the human's session, not the agent's", async () => {
+test("the vault list, the token and the logout run in the human's session, not the agent's", async () => {
   // The ambient environment is the trap: a shell that has already sourced the env
   // file carries all three variables, and reading the vaults through them would
   // list what the *previous* agent may reach rather than what the human has.
@@ -219,8 +220,8 @@ test("the vault list and the token are read in the human's session, not the agen
       else process.env[key] = value;
     }
   }
-  const [, vaultList, agentCreate] = run.calls();
-  for (const call of [vaultList, agentCreate]) {
+  const [, vaultList, agentCreate, humanLogout] = run.calls();
+  for (const call of [vaultList, agentCreate, humanLogout]) {
     assert.equal(call.env.PROTON_PASS_SESSION_DIR, null, `${call.mode} must not reuse the agent's session directory`);
     assert.equal(call.env.PROTON_PASS_PERSONAL_ACCESS_TOKEN, null, `${call.mode} must not reuse the agent's token`);
     // But not the key provider: see HUMAN_SESSION. Clearing it is what logs the
@@ -360,16 +361,45 @@ test('without a terminal it prints the vaults and the manual commands, and creat
   assert.match(run.output(), /pass-cli login/);
 });
 
+test("the human's session is signed out once the token exists, and only ever its own", async () => {
+  // Which session a logout ends is decided by the environment it runs in, and
+  // the test above pins that for every human call including this one. What is
+  // left to say here is when it happens and what it is: after the token exists,
+  // because a session ended before that leaves setup unable to mint one — and
+  // plain rather than `--force`, so the session is gone on the account too.
+  const run = harness();
+  assert.equal((await runSetup(run.options)).ok, true);
+  const [, , create, logout] = run.calls();
+  assert.equal(create.mode, 'agent-create', 'the logout comes after the token exists, never before it');
+  assert.deepEqual(logout.argv, ['logout'], 'plain, so the session is gone on the account and not just here');
+  assert.match(run.output(), /Signed your own session out/);
+});
+
+test('a logout that fails is reported, and setup carries on', async () => {
+  // By this point the token exists on the account and in the file. Abandoning
+  // the run over a session that would not close would leave a live grant that
+  // nothing is logged in to use — a worse end state than the one being
+  // reported, and reachable only by treating tidying up as load-bearing.
+  const run = harness({
+    modes: ['version', 'vaults-many', 'agent-create', 'silent-fail', 'no-session', 'login', 'version', 'vaults-many', 'info-token'],
+  });
+  assert.equal((await runSetup(run.options)).ok, true, 'the agent is set up either way');
+  assert.match(run.output(), /Could not sign your own session out/);
+  assert.match(run.output(), /Run pass-cli logout yourself/);
+  assert.equal(run.output().includes(TOKEN), false);
+});
+
 test('a second run clears the session already in the agent directory, then logs in', async () => {
   // `pass-cli login` refuses a directory that already holds a session — measured:
   // exit 1, `Error: Already authenticated`. Without this the second run of setup
   // fails *after* minting a token: a live grant, nothing configured.
   const run = harness({
-    modes: ['version', 'vaults-many', 'agent-create', 'info-token', 'logout', 'login', 'version', 'vaults-many', 'info-token'],
+    modes: ['version', 'vaults-many', 'agent-create', 'logout', 'info-token', 'logout', 'login', 'version', 'vaults-many', 'info-token'],
   });
   const result = await runSetup(run.options);
   assert.equal(result.ok, true, 'a second run must reach a working end state');
-  const [, , , probe, logout, login] = run.calls();
+  const [, , , humanLogout, probe, logout, login] = run.calls();
+  assert.deepEqual(humanLogout.argv, ['logout'], "the human's session is ended once the token exists");
   assert.deepEqual(probe.argv, ['info', '--output', 'json']);
   assert.deepEqual(logout.argv, ['logout', '--force'], 'the stale session is cleared before the login');
   assert.deepEqual(login.argv, ['login']);
@@ -384,10 +414,10 @@ test('a second run clears the session already in the agent directory, then logs 
 });
 
 test('a stale session that cannot be cleared is reported, not logged in over', async () => {
-  const run = harness({ modes: ['version', 'vaults-many', 'agent-create', 'info-token', 'silent-fail'] });
+  const run = harness({ modes: ['version', 'vaults-many', 'agent-create', 'logout', 'info-token', 'silent-fail'] });
   const result = await runSetup(run.options);
   assert.equal(result.ok, false);
-  assert.equal(run.calls().length, 5, 'no login attempt after a logout that failed');
+  assert.equal(run.calls().length, 6, 'no login attempt after a logout that failed');
   assert.match(run.output(), /Could not clear the agent session already in/);
   assert.ok(run.output().includes(run.sessionDir), 'the directory to fix by hand is named');
   assert.equal(run.output().includes(TOKEN), false, 'a failure path prints no token either');
@@ -396,7 +426,7 @@ test('a stale session that cannot be cleared is reported, not logged in over', a
 test('a failed login says where the token is, and does not print it', async () => {
   // The token is already on the account and already in the file by this point,
   // so the message has to name the file rather than the token.
-  const run = harness({ modes: ['version', 'vaults-many', 'agent-create', 'no-session', 'silent-fail'] });
+  const run = harness({ modes: ['version', 'vaults-many', 'agent-create', 'logout', 'no-session', 'silent-fail'] });
   const result = await runSetup(run.options);
   assert.equal(result.ok, false);
   assert.match(run.output(), /pass-cli login failed/);
@@ -480,9 +510,13 @@ test("the probe for a stale session is answered, not healed into one", async () 
   const run = harness();
   assert.equal((await runSetup(run.options)).ok, true);
   const argvs = run.calls().map((call) => call.argv);
-  assert.equal(argvs.filter((argv) => argv[0] === 'logout').length, 0, 'nothing was there, so nothing is cleared');
+  assert.equal(
+    argvs.filter((argv) => argv[1] === '--force').length,
+    0,
+    'nothing was there, so nothing is cleared — the plain logout is the human session ending'
+  );
   assert.equal(argvs.filter((argv) => argv[0] === 'login').length, 1);
-  assert.equal(run.calls().length, HAPPY.length, 'the happy path is still eight calls');
+  assert.equal(run.calls().length, HAPPY.length, 'the happy path is still nine calls');
 });
 
 test(
