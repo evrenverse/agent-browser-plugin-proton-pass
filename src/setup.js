@@ -310,9 +310,19 @@ export async function runSetup(options = {}) {
       await runPassCli(['logout'], human);
       out('Signed your own session out — it is needed only to list the vaults and mint the token.\n');
     } catch (error) {
+      // The failure is often after the fact rather than instead of the logout:
+      // measured against pass-cli 2.3.3 with PROTON_PASS_KEY_PROVIDER=fs on
+      // 2026-09-01, `logout` removed the session directory and *then* failed
+      // writing its auth state back — `Error serializing auth: Error getting
+      // local key`, exit non-zero, session genuinely gone. Claiming it is still
+      // signed in would send someone to log out something that no longer exists,
+      // so the message names the check instead of the conclusion.
       out(
-        `Could not sign your own session out: ${error.message}\n` +
-          'It stays signed in and sees every vault. Run pass-cli logout yourself once this finishes.\n'
+        `Signing your own session out reported: ${error.message}\n` +
+          'That may be an error after the fact rather than instead of the logout: pass-cli clears ' +
+          'the session directory first and can fail writing its auth state back afterwards. Check ' +
+          'with pass-cli info — "there is no session" means it is gone. If it still answers, run ' +
+          'pass-cli logout again.\n'
       );
     }
 

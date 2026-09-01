@@ -384,8 +384,9 @@ test('a logout that fails is reported, and setup carries on', async () => {
     modes: ['version', 'vaults-many', 'agent-create', 'silent-fail', 'no-session', 'login', 'version', 'vaults-many', 'info-token'],
   });
   assert.equal((await runSetup(run.options)).ok, true, 'the agent is set up either way');
-  assert.match(run.output(), /Could not sign your own session out/);
-  assert.match(run.output(), /Run pass-cli logout yourself/);
+  assert.match(run.output(), /Signing your own session out reported/);
+  // The check, not a conclusion: the same failure covers a logout that worked.
+  assert.match(run.output(), /Check with pass-cli info/);
   assert.equal(run.output().includes(TOKEN), false);
 });
 
