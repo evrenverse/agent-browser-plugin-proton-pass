@@ -9,5 +9,6 @@ agent-browser.json
 # Internal working documents: the agent instruction file and the superpowers
 # spec/plan. They stay on disk and out of the repository — the reasoning they
 # hold is restated in README.md and CHANGELOG.md, which are what a reader gets.
+AGENTS.md
 CLAUDE.md
 docs/
