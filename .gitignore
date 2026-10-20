@@ -6,9 +6,7 @@ test/fixtures/*.cmd
 # register the plugin from here. It names absolute paths and never belongs in git.
 agent-browser.json
 
-# Internal working documents: the agent instruction file and the superpowers
-# spec/plan. They stay on disk and out of the repository — the reasoning they
-# hold is restated in README.md and CHANGELOG.md, which are what a reader gets.
-AGENTS.md
-CLAUDE.md
+# Internal working documents: the superpowers spec/plan. They stay on disk and
+# out of the repository — the reasoning they hold is restated in README.md and
+# CHANGELOG.md, which are what a reader gets.
 docs/
