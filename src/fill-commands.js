@@ -29,8 +29,9 @@ const FLAGS = {
 };
 
 const USAGE =
-  'agent-browser-plugin-proton-pass fill-commands --item <ref> --password-selector <css>\n' +
-  '  [--username-selector <css>] [--totp-selector <css>] [--url <login page>] [--profile <name>]\n\n' +
+  'agent-browser-plugin-proton-pass fill-commands --item <ref> <at least one selector>\n' +
+  '  selectors: [--username-selector <css>] [--password-selector <css>] [--totp-selector <css>]\n' +
+  '  [--url <login page>] [--profile <name>]\n\n' +
   'Writes agent-browser batch commands to stdout. Pipe it:\n' +
   '  … fill-commands --item "GMX" --username-selector "#u" --password-selector "#pw" | agent-browser batch\n';
 

@@ -26,7 +26,8 @@ agent-browser plugin add evrenverse/agent-browser-plugin-proton-pass --name prot
 **Both references above are the GitHub form on purpose.** This package is not on
 npm and will not be — `agent-browser plugin add` resolves a reference by shape,
 and a bare name would send it to the registry, where it finds nothing. Only the
-first line and the last are yours to run; the two in between belong to the human.
+first line and the last are yours to run. `pass-cli login` and `setup` belong to the
+human; `source` belongs in every shell that runs agent-browser.
 
 The token creation repeats every time the token expires — see rule 4. `setup`
 needs a terminal, so it is one of the things to hand back to the human rather
@@ -55,11 +56,11 @@ agent-browser get url          # confirm you landed past the login
 
 **`agent-browser get url` is not optional, and the selectors are not decoration.** Measured: on a page with a newsletter form above the login form, agent-browser typed the password into the right field and the username into the *newsletter* field, then printed `✓ Logged in as …` without submitting anything. That line means the fields were filled, never that the login succeeded. Give the three selectors every time, not only when a page has two forms: without `--submit-selector` agent-browser takes the first plausible submit button, and on a shop that is the **search box** — measured 2026-08-27 on two shops that answered a login attempt with "Der eingegebene Suchbegriff ist leider zu kurz". Then check the URL afterwards.
 
-**When a login fails you will see one line: `✗ Plugin 'proton-pass' returned success=false`.** agent-browser discards the plugin's own message, so nothing tells you whether the item was ambiguous, the token expired, or the site did not match the item. Resolve it by hand to find out — that is where the real sentence lives:
+**When a login fails you will see one line: `✗ Plugin 'proton-pass' returned success=false`.** agent-browser discards the plugin's own message, so nothing tells you whether the item was ambiguous, the token expired, or the site did not match the item. Resolve it by hand to find out — that is where the real sentence lives. Keep the `jq` filter: a resolve that succeeds by hand, as it does when your shell has the env file and agent-browser's does not, answers with the password on stdout.
 
 ```bash
 echo '{"protocol":"agent-browser.plugin.v1","type":"credential.resolve","request":{"profileName":"x","itemRef":"GMX","url":"https://www.gmx.net/login"}}' \
-  | agent-browser-plugin-proton-pass
+  | agent-browser-plugin-proton-pass | jq '{success, error}'
 ```
 
 **Always pass `--url`, with the same login page you opened.** agent-browser does
@@ -128,7 +129,8 @@ to add that URL to the item in Proton Pass. Do not work around it by dropping
    that same report and let it win.** If `vault access` or `session kind` failed
    in it, that failure is the answer, whatever the recovery line says.
 5. Prefer `--confirm-actions plugin:proton-pass:credential.read` in interactive
-   sessions so a human approves each secret read.
+   sessions so a human approves each secret read. It is a global flag and goes
+   before the subcommand: `agent-browser --confirm-actions plugin:proton-pass:credential.read auth login gmx …`.
 
 **A `pass://` URI belongs to one session only.** Share ids differ between a human login and each agent token, so a URI a human copied out of their own `pass-cli` answers 422 under your token. Use the title — titles are the same for everyone.
 
